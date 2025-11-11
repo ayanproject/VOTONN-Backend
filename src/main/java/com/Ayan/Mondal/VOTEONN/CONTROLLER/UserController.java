@@ -18,8 +18,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
-
-@RestController
+@CrossOrigin(origins = "https://red-plant-01033d700.3.azurestaticapps.net")@RestController
 @RequestMapping("/api")
 public class UserController {
 
