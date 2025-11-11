@@ -37,10 +37,10 @@ public class EmailService {
     }
 
     // Method to send voting confirmation after vote submission
-    public void sendVotingConfirmation(String toEmail, String partyName) {
+    public void sendVotingConfirmation(String toEmail) {
         String subject = "Voting Confirmation";
         String body = "Dear Voter,\n\n" +
-                "Thank you for successfully voting for *" + partyName + "*.\n" +
+                "Thank you for successfully voting \n" +
                 "Your vote has been recorded securely.\n\n" +
                 "Regards,\n" +
                 "Voting Application Team";

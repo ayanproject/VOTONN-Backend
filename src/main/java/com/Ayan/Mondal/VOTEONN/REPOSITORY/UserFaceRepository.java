@@ -5,6 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface UserFaceRepository extends JpaRepository<UserFaceEntity, Long> {
-    Optional<UserFaceEntity> findByVoter_VoterId(String voterId); // find face by voterId (String)
-    Optional<UserFaceEntity> findByVoterId(Long voterId);          // find face by voter PK
+    // ✅ This one is GOOD (matches "encryptedVoterId" field)
+    Optional<UserFaceEntity> findByEncryptedVoterId(String encryptedVoterId);
+
+    // ✅ This one is GOOD (matches "encryptedSecretPin" field)
+    Optional<UserFaceEntity> findByEncryptedSecretPin(String encryptedSecretPin);
+
+    // ✅ This one is GOOD (matches "email" field)
+    Optional<UserFaceEntity> findByEmail(String email);
 }

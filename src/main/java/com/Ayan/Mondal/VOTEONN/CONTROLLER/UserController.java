@@ -13,6 +13,10 @@ import org.springframework.http.ResponseEntity;
 //import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 //import org.springframework.security.core.Authentication;
 //import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,41 +24,29 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     @Autowired
-   private UserService userService;
+    private UserService userService;
 
-
-
-//    @Autowired
-//    private AuthenticationManager authenticationManager;
-
-    @PostMapping("/register/user")
-    public ResponseEntity<?> RegisterUser(@RequestBody UserDTO user){
+    // Register user
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody UserDTO user) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.registerAsUser(user));
     }
 
+    // Register admin
     @PostMapping("/register/admin")
-    public ResponseEntity<?> RegisterAdmin(@RequestBody UserDTO user){
+    public ResponseEntity<?> registerAdmin(@RequestBody UserDTO user) {
         return ResponseEntity.status(HttpStatus.OK).body(userService.registerAsAdmin(user));
     }
 
+    // Login user
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody LoginDTO dto) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.loginUser(dto));
+    }
 
-//    @PostMapping("/Login")
-//    public ResponseEntity<?> UserLogin(@RequestBody LoginDTO dto){
-//        try {
-//            Authentication authentication = authenticationManager.authenticate(
-//                    new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
-//            );
-//            return ResponseEntity.ok("Login successful");
-//        } catch (AuthenticationException ex) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-//        }
-//
-//    }
-
-
+    // Get all users
     @GetMapping("/all/user")
-    public ResponseEntity<?> getAllUsers(){
+    public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUser());
-
     }
 }

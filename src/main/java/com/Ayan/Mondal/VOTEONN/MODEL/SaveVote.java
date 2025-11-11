@@ -1,5 +1,6 @@
 package com.Ayan.Mondal.VOTEONN.MODEL;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
@@ -12,8 +13,9 @@ public class SaveVote {
     private String voterId;
 
     @ManyToOne
-    @JoinColumn(name = "party_id")
-    private PartyCards partName;
+    @JoinColumn(name = "part_name_id")
+    @JsonBackReference
+    private PartyCards partyName;
 
 
 
@@ -33,11 +35,11 @@ public class SaveVote {
         this.voterId = voterId;
     }
 
-    public PartyCards getPartName() {
-        return partName;
+    public PartyCards getPartyName() {
+        return partyName;
     }
 
-    public void setPartName(PartyCards partName) {
-        this.partName = partName;
+    public void setPartyName(PartyCards partyName) {
+        this.partyName = partyName;
     }
 }

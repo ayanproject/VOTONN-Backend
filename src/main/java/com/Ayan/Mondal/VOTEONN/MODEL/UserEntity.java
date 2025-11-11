@@ -16,13 +16,21 @@ public class UserEntity {
     private String gender;
 
     private String password;
-    private List<String> role;
+    private String role;
     private int age;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<VoterDetails> voter;
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+//    private List<VoterDetails> voter;
 
     public UserEntity(){
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     public Long getId() {
@@ -73,13 +81,7 @@ public class UserEntity {
         this.password = password;
     }
 
-    public List<String> getRole() {
-        return role;
-    }
 
-    public void setRole(List<String> role) {
-        this.role = role;
-    }
 
     public int getAge() {
         return age;
@@ -89,11 +91,11 @@ public class UserEntity {
         this.age = age;
     }
 
-    public List<VoterDetails> getVoter() {
-        return voter;
-    }
-
-    public void setVoter(List<VoterDetails> voter) {
-        this.voter = voter;
-    }
+//    public List<VoterDetails> getVoter() {
+//        return voter;
+//    }
+//
+//    public void setVoter(List<VoterDetails> voter) {
+//        this.voter = voter;
+//    }
 }
