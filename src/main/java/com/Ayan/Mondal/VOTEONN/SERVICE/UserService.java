@@ -66,20 +66,7 @@ public class UserService {
     }
 
     // Login Method
-    public String loginUser(LoginDTO dto) {
-        Optional<UserEntity> userOpt = userRepository.findByEmail(dto.getEmail());
-        if (userOpt.isEmpty()) {
-            return "User not found with email: " + dto.getEmail();
-        }
 
-        UserEntity user = userOpt.get();
-
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            return "Invalid password!";
-        }
-
-        return "Login successful for user: " + user.getName() + " (Role: " + user.getRole() + ")";
-    }
 
     public List<UserEntity> getAllUser() {
         return userRepository.findAll();

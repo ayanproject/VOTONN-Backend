@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
-@CrossOrigin(origins = "https://red-plant-01033d700.3.azurestaticapps.net")
+
 @RestController
 @RequestMapping("/api/voters")
 @RequiredArgsConstructor

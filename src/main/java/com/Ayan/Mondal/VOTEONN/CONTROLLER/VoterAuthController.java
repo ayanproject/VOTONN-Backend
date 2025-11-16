@@ -15,7 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "https://red-plant-01033d700.3.azurestaticapps.net")
+
 @RestController
 @RequestMapping("/api/voter")
 public class VoterAuthController {
