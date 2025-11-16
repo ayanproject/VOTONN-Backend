@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy JAR app to Azure Web App - VOTONNbackend
+name: Build and deploy JAR app to Azure Web App - VOTONNBackend
 
 on:
   push:
@@ -49,15 +49,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F7714FD6BC52477A85E6791E8D5AC740 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_D4C50265815D475D9B1D00330F869232 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C127EB4403614F7C98249DC3D2642C92 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_84D1CEE0C5434C878C402B98CD4AE041 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_3664B652FEAB4492AE7D3CB0FCD398AE }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1E7E3AB55C874DFE956513A7D5557097 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'VOTONNbackend'
+          app-name: 'VOTONNBackend'
           slot-name: 'Production'
           package: '*.jar'
           
