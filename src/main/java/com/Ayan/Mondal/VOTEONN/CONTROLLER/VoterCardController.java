@@ -6,7 +6,6 @@ import com.Ayan.Mondal.VOTEONN.MODEL.UserFaceEntity;
 
 import com.Ayan.Mondal.VOTEONN.REPOSITORY.UserFaceRepository;
 import com.Ayan.Mondal.VOTEONN.SERVICE.EmailService;
-import com.Ayan.Mondal.VOTEONN.SERVICE.FaceVerificationService;
 import com.Ayan.Mondal.VOTEONN.SERVICE.FaceService;
 import com.Ayan.Mondal.VOTEONN.SERVICE.OtpService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,8 +33,7 @@ public class VoterCardController {
     private UserFaceRepository userFaceRepository;
     @Autowired
     private final FaceService voterFaceService;
-    @Autowired
-    private final FaceVerificationService faceVerificationService;
+
     @Autowired
     private  final EmailService emailService;
 
