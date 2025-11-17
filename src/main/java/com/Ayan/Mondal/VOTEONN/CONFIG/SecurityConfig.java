@@ -56,26 +56,25 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
-                // ADD THIS to properly enable your WebConfig CORS
                 .cors(Customizer.withDefaults())
-
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_API).permitAll()
-
-                        // === THIS IS THE FIX ===
-                        // Allow all browser preflight (OPTIONS) requests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // All other requests must be authenticated
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+        // ******* MISSING PART — ADD THESE TWO LINES ********
+        http.authenticationProvider(authenticationProvider());
+        http.userDetailsService(userDetailsService);
+        // ***************************************************
+
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 }
