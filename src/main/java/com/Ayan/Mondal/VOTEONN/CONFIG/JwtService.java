@@ -19,8 +19,9 @@ import java.util.function.Function;
 public class JwtService {
 
     // 1. IMPORTANT: Move this secret to your environment variables later!
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:${JWT_SECRET}}")
     private String SECRET_KEY;
+
 
     // 2. Token expiration time (e.g., 24 hours)
     private static final long JWT_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
