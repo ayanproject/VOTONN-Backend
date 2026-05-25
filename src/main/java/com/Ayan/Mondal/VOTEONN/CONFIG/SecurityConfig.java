@@ -19,10 +19,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Autowired
-    private JwtRequestFilter jwtRequestFilter; // <-- INJECT filter
+    private JwtRequestFilter jwtRequestFilter;
 
     @Autowired
-    private UserDetailsServiceImpl userDetailsService; // <-- INJECT user service
+    private UserDetailsServiceImpl userDetailsService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -34,9 +34,6 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-
-    // ++ ADD THIS BEAN ++
-    // This tells Spring Security how to get user details and check passwords
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -48,15 +45,20 @@ public class SecurityConfig {
     public static final String[] PUBLIC_API = {
             "/api/register**",
             "/api/login",
-            "/error", //
-            "/api/party**"
-            // All other URLs are now GONE from this list
+            "/api/auth/google",          // ← NEW: Google OAuth2 callback
+            "/api/voters/register",
+            "/api/voters/register-with-face",
+            "/error",
+            "/api/party**",
+            "/api/voters/verify",
+            "/api/voters/verify-otp",
+            "/api/voter/submit-vote",
+            "/api/correction/submit",
+            "/api/deletion/submit",
     };
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -65,16 +67,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                // Keep STATELESS — Google OAuth2 here is purely API-based (no server-side session needed).
+                // The frontend sends the Google ID token → backend verifies → returns JWT.
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // ******* MISSING PART — ADD THESE TWO LINES ********
         http.authenticationProvider(authenticationProvider());
         http.userDetailsService(userDetailsService);
-        // ***************************************************
-
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 }
