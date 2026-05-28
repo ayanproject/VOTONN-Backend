@@ -18,8 +18,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // 1. IMPORTANT: Move this secret to your environment variables later!
-    @Value("${jwt.secret:${JWT_SECRET}}")
+    @Value("${jwt.secret}")
     private String SECRET_KEY;
 
 
