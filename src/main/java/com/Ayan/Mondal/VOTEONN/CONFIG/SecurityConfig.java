@@ -56,6 +56,9 @@ public class SecurityConfig {
             "/api/voters/register",
             "/api/voters/register-with-face",
             "/error",
+            "/api/forgot-password**",
+            "/api/forgot-password/**",    // Fixed: added /
+            "/api/party/**",
             "/api/party**",
             "/api/voters/verify",
             "/api/voters/verify-otp",
