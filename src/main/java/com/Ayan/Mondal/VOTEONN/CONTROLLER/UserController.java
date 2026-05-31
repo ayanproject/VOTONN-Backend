@@ -23,42 +23,40 @@ import java.util.Map;
 public class UserController {
 
     @Autowired private UserService userService;
-    @Autowired private UserRepository userRepository;
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private JwtService jwtService;
-
-    // ── NEW: Inject the two new services ──────────────────────────────────────
     @Autowired private CaptchaService captchaService;
     @Autowired private GoogleAuthService googleAuthService;
-    // ─────────────────────────────────────────────────────────────────────────
 
-    // ── Register user ─────────────────────────────────────────────────────────
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserDTO user) {
         return ResponseEntity.ok(userService.registerAsUser(user));
     }
 
-    // ── Register admin ────────────────────────────────────────────────────────
     @PostMapping("/register/admin")
     public ResponseEntity<?> registerAdmin(@RequestBody UserDTO user) {
         return ResponseEntity.ok(userService.registerAsAdmin(user));
     }
 
-    // ── Login (email + password + reCAPTCHA v3) ───────────────────────────────
+    // ── NEW: Dynamic Custom CAPTCHA Endpoint ─────────────────────────────────
+    @GetMapping("/captcha")
+    public ResponseEntity<?> getCaptcha() {
+        return ResponseEntity.ok(captchaService.generateCaptcha());
+    }
+
+    // ── Login (email + password + Custom Alphanumeric CAPTCHA Validation) ─────
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginDTO dto) {
 
-        // 1. Verify reCAPTCHA v3 token FIRST
-        //    If the score is too low or the token is missing, reject the request.
-        if (!captchaService.verifyCaptcha(dto.getCaptchaToken())) {
+        // Validating the internal security layer challenge
+        if (!captchaService.verifyCaptcha(dto.getCaptchaSessionId(), dto.getCaptchaAnswer())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of(
                             "status",  HttpStatus.FORBIDDEN.value(),
-                            "message", "Security check failed. Please reload the page and try again."
+                            "message", "Security check failed. Incorrect captcha input."
                     ));
         }
 
-        // 2. Authenticate credentials
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
@@ -79,12 +77,6 @@ public class UserController {
         }
     }
 
-    // ── Google OAuth2 login ───────────────────────────────────────────────────
-    /**
-     * Called after the user completes Google's consent screen on the frontend.
-     * Receives the raw Google ID token (credential), verifies it,
-     * then returns a standard app JWT — exactly like the /login endpoint.
-     */
     @PostMapping("/auth/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
         String credential = body.get("credential");
@@ -94,14 +86,13 @@ public class UserController {
             return ResponseEntity.ok(result);
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Google authentication failed: invalid token."));
+                    .body(Map.of("message", "Google verification failed: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Google authentication error: " + e.getMessage()));
+                    .body(Map.of("message", "Internal auth system handling processing mistake: " + e.getMessage()));
         }
     }
 
-    // ── Get all users (protected) ─────────────────────────────────────────────
     @GetMapping("/all/user")
     public ResponseEntity<?> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUser());

@@ -5,57 +5,101 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Verifies a Google reCAPTCHA v3 token against Google's siteverify API.
- * Returns true only if the token is genuine AND the risk score >= 0.5.
- *
- * Score guide:
- *   1.0 → very likely human
- *   0.0 → very likely bot
- *   0.5 → our threshold (safe middle ground)
- */
 @Service
 public class CaptchaService {
 
-    @Value("${recaptcha.secret}")
-    private String recaptchaSecret;
+    private static class CaptchaDetails {
+        String answer;
+        long expiryTime;
+        CaptchaDetails(String answer, long expiryTime) {
+            this.answer = answer;
+            this.expiryTime = expiryTime;
+        }
+    }
 
-    private static final String VERIFY_URL =
-            "https://www.google.com/recaptcha/api/siteverify";
+    private final Map<String, CaptchaDetails> captchaStorage = new ConcurrentHashMap<>();
+    private final Random random = new Random();
+    private static final long EXPIRY_DURATION = 5 * 60 * 1000; // 5 Minutes Validity
 
-    // Minimum score to consider a request human
-    private static final double SCORE_THRESHOLD = 0.5;
-
-    public boolean verifyCaptcha(String token) {
-        if (token == null || token.isBlank()) {
-            return false;
+    public Map<String, String> generateCaptcha() {
+        // Intentionally avoided confusing characters like O, 0, I, 1, l
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghkmnpqrstuvwxyz23456789";
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            text.append(chars.charAt(random.nextInt(chars.length())));
         }
 
+        int width = 160;
+        int height = 48;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = image.createGraphics();
+
+        // Background styling matching your var(--ink-2) #13151d color
+        g2d.setColor(new Color(19, 21, 29));
+        g2d.fillRect(0, 0, width, height);
+
+        // Grid/Noise generation blending into your var(--accent) neon glow
+        g2d.setColor(new Color(59, 108, 244, 40));
+        for (int i = 0; i < 10; i++) {
+            g2d.drawLine(random.nextInt(width), random.nextInt(height), random.nextInt(width), random.nextInt(height));
+        }
+
+        // Draw randomized letter positioning
+        g2d.setFont(new Font("Arial", Font.BOLD, 26));
+        for (int i = 0; i < text.length(); i++) {
+            // Alternating neon hues
+            g2d.setColor(new Color(140 + random.nextInt(110), 170 + random.nextInt(85), 255));
+            char ch = text.charAt(i);
+
+            int x = 12 + (i * 24);
+            int y = 32 + random.nextInt(10) - 5;
+
+            double angle = (random.nextDouble() - 0.5) * 0.4;
+            g2d.rotate(angle, x, y);
+            g2d.drawString(String.valueOf(ch), x, y);
+            g2d.rotate(-angle, x, y);
+        }
+        g2d.dispose();
+
+        String base64Image = "";
         try {
-            RestTemplate restTemplate = new RestTemplate();
-
-            // Google expects a POST (or GET) with secret + response as query params
-            String url = VERIFY_URL + "?secret=" + recaptchaSecret + "&response=" + token;
-
-            @SuppressWarnings("unchecked")
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, null, Map.class);
-
-            Map<String, Object> body = response.getBody();
-            if (body == null) return false;
-
-            boolean success = Boolean.TRUE.equals(body.get("success"));
-            double  score   = body.get("score") != null
-                    ? ((Number) body.get("score")).doubleValue()
-                    : 0.0;
-
-            return success && score >= SCORE_THRESHOLD;
-
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(image, "png", baos);
+            base64Image = Base64.getEncoder().encodeToString(baos.toByteArray());
         } catch (Exception e) {
-            // Log and fail safe — deny the request if verification itself fails
-            System.err.println("[CaptchaService] Verification error: " + e.getMessage());
+            throw new RuntimeException("Error rendering CAPTCHA engine graphic", e);
+        }
+
+        String sessionId = UUID.randomUUID().toString();
+        captchaStorage.put(sessionId, new CaptchaDetails(text.toString().toLowerCase(), System.currentTimeMillis() + EXPIRY_DURATION));
+
+        cleanupExpiredCaptchas(); // Prunes old cached maps asynchronously
+
+        return Map.of("imageBase64", base64Image, "sessionId", sessionId);
+    }
+
+    public boolean verifyCaptcha(String sessionId, String userInput) {
+        if (sessionId == null || userInput == null) return false;
+
+        CaptchaDetails details = captchaStorage.remove(sessionId); // Instant removal (Single-use assurance)
+        if (details == null || System.currentTimeMillis() > details.expiryTime) {
             return false;
         }
+
+        return details.answer.equalsIgnoreCase(userInput.trim());
+    }
+
+    private void cleanupExpiredCaptchas() {
+        long now = System.currentTimeMillis();
+        captchaStorage.entrySet().removeIf(entry -> now > entry.getValue().expiryTime);
     }
 }
