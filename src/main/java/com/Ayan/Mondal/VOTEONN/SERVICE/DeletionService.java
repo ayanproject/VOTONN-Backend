@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.Ayan.Mondal.VOTEONN.MODEL.UserFaceEntity;
+import com.Ayan.Mondal.VOTEONN.REPOSITORY.UserFaceRepository;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -20,6 +23,9 @@ public class DeletionService {
 
     @Autowired
     private DeletionRequestRepository deletionRepo;
+
+    @Autowired
+    private UserFaceRepository userFaceRepository;
 
     // Set in application.properties:  file.upload-dir=uploads/deletion
     @Value("${file.upload-dir:uploads/deletion}")
@@ -82,6 +88,23 @@ public class DeletionService {
     /** Returns all pending deletion requests — for admin use later */
     public List<DeletionRequest> getAllPending() {
         return deletionRepo.findByStatus("PENDING");
+    }
+
+    @Transactional
+    public void resolveDeletion(Long id, String action) {
+        DeletionRequest req = deletionRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Deletion request not found with ID: " + id));
+        req.setStatus(action.toUpperCase());
+        deletionRepo.save(req);
+
+        if ("APPROVED".equalsIgnoreCase(action)) {
+            org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = 
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+            userFaceRepository.findAll().stream()
+                    .filter(v -> encoder.matches(req.getVoterId(), v.getEncryptedVoterId()))
+                    .findFirst()
+                    .ifPresent(v -> userFaceRepository.delete(v));
+        }
     }
 
     // ── Internal helper ───────────────────────────────────────────────────────

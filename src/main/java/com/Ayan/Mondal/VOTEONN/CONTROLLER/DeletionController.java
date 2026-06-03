@@ -71,4 +71,18 @@ public class DeletionController {
     public ResponseEntity<?> getPendingRequests() {
         return ResponseEntity.ok(deletionService.getAllPending());
     }
+
+    @PostMapping("/{id}/resolve")
+    public ResponseEntity<?> resolveRequest(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        String action = body.get("action");
+        if (action == null || (!action.equalsIgnoreCase("APPROVED") && !action.equalsIgnoreCase("REJECTED"))) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid action. Use APPROVED or REJECTED."));
+        }
+        try {
+            deletionService.resolveDeletion(id, action);
+            return ResponseEntity.ok(Map.of("message", "Request updated successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

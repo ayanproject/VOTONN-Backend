@@ -66,7 +66,14 @@ public class UserController {
                     (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
 
             String token = jwtService.generateToken(userDetails);
-            return ResponseEntity.ok(Map.of("token", token));
+
+            // Extract the role (strip "ROLE_" prefix added by UserDetailsServiceImpl)
+            String role = userDetails.getAuthorities().stream()
+                    .findFirst()
+                    .map(a -> a.getAuthority().replace("ROLE_", ""))
+                    .orElse("USER");
+
+            return ResponseEntity.ok(Map.of("token", token, "role", role));
 
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)

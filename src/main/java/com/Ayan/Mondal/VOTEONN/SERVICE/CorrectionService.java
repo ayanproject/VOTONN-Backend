@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.Ayan.Mondal.VOTEONN.MODEL.UserFaceEntity;
+import com.Ayan.Mondal.VOTEONN.REPOSITORY.UserFaceRepository;
+
 import java.io.IOException;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -20,6 +23,9 @@ public class CorrectionService {
 
     @Autowired
     private CorrectionRequestRepository correctionRepo;
+
+    @Autowired
+    private UserFaceRepository userFaceRepository;
 
     // Folder where uploaded documents are saved.
     // Set this in application.properties:  file.upload-dir=uploads/correction
@@ -79,6 +85,39 @@ public class CorrectionService {
     /** Returns all pending correction requests — for admin use later */
     public List<CorrectionRequest> getAllPending() {
         return correctionRepo.findByStatus("PENDING");
+    }
+
+    @Transactional
+    public void resolveCorrection(Long id, String action) {
+        CorrectionRequest req = correctionRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Correction request not found with ID: " + id));
+        req.setStatus(action.toUpperCase());
+        correctionRepo.save(req);
+
+        if ("APPROVED".equalsIgnoreCase(action)) {
+            org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = 
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+            UserFaceEntity voter = userFaceRepository.findAll().stream()
+                    .filter(v -> encoder.matches(req.getVoterId(), v.getEncryptedVoterId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Voter not found with matching Voter ID"));
+
+            String field = req.getFieldToCorrect();
+            String newValue = req.getNewValue();
+
+            if ("name".equalsIgnoreCase(field)) {
+                voter.setName(newValue);
+            } else if ("father".equalsIgnoreCase(field)) {
+                voter.setFatherName(newValue);
+            } else if ("dob".equalsIgnoreCase(field)) {
+                voter.setDob(java.time.LocalDate.parse(newValue));
+            } else if ("email".equalsIgnoreCase(field)) {
+                voter.setEmail(newValue);
+            } else if ("pin".equalsIgnoreCase(field)) {
+                voter.setSecretPinSecure(newValue);
+            }
+            userFaceRepository.save(voter);
+        }
     }
 
     // ── Internal helper ───────────────────────────────────────────────────────
