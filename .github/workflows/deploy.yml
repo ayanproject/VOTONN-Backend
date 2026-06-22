@@ -1,0 +1,55 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy application via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # 1. Update the system and install Java 21 if not present
+            if ! type java > /dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y openjdk-21-jdk maven
+            fi
+
+            # 2. Navigate to project directory or clone it if first time
+            if [ ! -d "VOTEONN" ]; then
+              git clone https://github.com/${{ github.repository }}.git VOTEONN
+              cd VOTEONN
+            else
+              cd VOTEONN
+              git reset --hard HEAD
+              git pull origin main
+            fi
+
+            # 3. Stop any existing Spring Boot application running on port 8080
+            PID=$(sudo lsof -t -i:8080) || true
+            if [ ! -z "$PID" ]; then
+              sudo kill -9 $PID
+            fi
+
+            # 4. Build the application package
+            mvn clean package -DskipTests
+
+            # 5. Launch the application with your production environment properties
+            nohup java -jar \
+              -Dspring.datasource.url="jdbc:postgresql://db.jqgrcwisqahgvmdonzao.supabase.co:5432/postgres" \
+              -Dspring.datasource.username="postgres" \
+              -Dspring.datasource.password="Ayan@457953" \
+              target/VOTEONN-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            
+            echo "Spring Boot application deployment initiated successfully."

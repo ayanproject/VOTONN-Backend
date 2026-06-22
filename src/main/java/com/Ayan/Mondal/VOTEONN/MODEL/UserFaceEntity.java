@@ -17,7 +17,7 @@ public class UserFaceEntity {
     private Long id;
 
     @Lob
-    @Column(nullable = false, columnDefinition = "LONGBLOB")
+    @Column(name = "face_image")
     private byte[] faceImage;
 
     @Column(nullable = false, unique = true)
