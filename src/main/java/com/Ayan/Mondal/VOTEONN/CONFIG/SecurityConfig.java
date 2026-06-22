@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -27,6 +28,7 @@ import com.Ayan.Mondal.VOTEONN.CONFIG.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
         @Autowired
@@ -54,24 +56,27 @@ public class SecurityConfig {
         }
 
         public static final String[] PUBLIC_API = {
-                        "/api/register**",
-                        "/api/login",
-                        "/api/auth/google",
-                        "/api/captcha",
-                        "/api/voters/register",
-                        "/api/voters/register-with-face",
-                        "/error",
-                        "/api/forgot-password**",
-                        "/api/forgot-password/**", // Fixed: added /
-                        "/api/correction/pending", // TEMPORARY
-                        "/api/deletion/pending", // TEMPORARY
-                        "/api/party/**",
-                        "/api/party**",
-                        "/api/voters/verify",
-                        "/api/voters/verify-otp",
-                        "/api/voter/submit-vote",
-                        "/api/correction/submit",
-                        "/api/deletion/submit",
+                "/api/register",
+                "/api/login",
+                "/api/auth/google",
+                "/api/captcha",
+                "/api/voters/register",
+                "/api/voters/register-with-face",
+                "/error",
+                "/api/forgot-password**",
+                "/api/forgot-password/**",
+                "/api/party/**",
+                "/api/party**",
+                "/api/voters/verify",
+                "/api/voters/verify-otp",
+                "/api/voter/submit-vote",
+                "/api/correction/submit",
+                "/api/deletion/submit",
+                "/uploads/**",
+                "/*.html",
+                "/*.js",
+                "/*.css",
+                "/partySelection/**",
         };
 
         @Bean
@@ -83,6 +88,12 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(PUBLIC_API).permitAll()
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                // Admin-only endpoints
+                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/correction/pending").hasRole("ADMIN")
+                                                .requestMatchers("/api/deletion/pending").hasRole("ADMIN")
+                                                .requestMatchers("/api/correction/*/resolve").hasRole("ADMIN")
+                                                .requestMatchers("/api/deletion/*/resolve").hasRole("ADMIN")
                                                 .anyRequest().authenticated())
                                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

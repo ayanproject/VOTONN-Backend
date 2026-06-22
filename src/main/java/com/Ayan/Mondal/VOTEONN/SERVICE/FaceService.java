@@ -21,8 +21,6 @@ public class FaceService {
 
 
     @Autowired
-    SaveVoteRepository voteRepository;
-    @Autowired
     EmailService emailService;
     @Autowired
   VoterRepository voterRepository;
@@ -125,7 +123,9 @@ public class FaceService {
                     && !voter.isHasVoted();
         }
         return false;
-    }public String submitVote(VoteRequest request) {
+    }
+
+    public String submitVote(VoteRequest request) {
         PartyCards byPartyName = cardsRepo.findByPartyName(request.getPartyName());
         if (byPartyName == null) {
             throw new RuntimeException("Invalid party name: " + request.getPartyName());
@@ -137,32 +137,25 @@ public class FaceService {
         Optional<UserFaceEntity> byVoterEmail = userFaceRepository.findByEmail(request.getEmail());
 
         if (byVoterEmail.isEmpty()) {
-            // Now this error message makes sense
             throw new RuntimeException("Voter not found for email: " + request.getEmail());
         }
 
-        UserFaceEntity voter = byVoterEmail.get(); // Get the voter from the correct Optional
+        UserFaceEntity voter = byVoterEmail.get();
         if (voter.isHasVoted()) {
             throw new RuntimeException("You have already voted!");
         }
 
+        // Mark voter as having voted
         voter.setHasVoted(true);
 
-        SaveVote newVote = new SaveVote();
-        newVote.setPartyName(byPartyName);
-
-        // This is correct: you are encrypting the Voter ID for the 'SaveVote' table
-        newVote.setVoterId(passwordEncoder.encode(request.getVoterId()));
-
-        byPartyName.getVoter().add(newVote);
+        // Increment the party's vote count
+        byPartyName.setVoteCount(byPartyName.getVoteCount() + 1);
 
         // =========================================================
         // ✅ FIX 2: Save the voter using the CORRECT repository
         // =========================================================
-        userFaceRepository.save(voter); // Use 'userFaceRepository'
-
+        userFaceRepository.save(voter); 
         cardsRepo.save(byPartyName);
-        voteRepository.save(newVote);
 
         emailService.sendVotingConfirmation(request.getEmail());
         return "Vote is given successfully";

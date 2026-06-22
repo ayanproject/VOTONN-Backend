@@ -2,12 +2,10 @@ package com.Ayan.Mondal.VOTEONN.SERVICE;
 
 import com.Ayan.Mondal.VOTEONN.DTO.PartyDTO;
 import com.Ayan.Mondal.VOTEONN.MODEL.PartyCards;
-import com.Ayan.Mondal.VOTEONN.MODEL.SaveVote;
 import com.Ayan.Mondal.VOTEONN.REPOSITORY.PartyCardsRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -33,13 +31,11 @@ public class PartyCardsService {
         newParty.setLeader(party.getLeader());
         newParty.setVision(party.getVision());
         newParty.setMission(party.getMission());
-        newParty.setVoter(Collections.emptyList());
         partyCardsRepo.save(newParty);
         return newParty;
     }
 
-    public List<SaveVote> getAllVotes(String partyName){
-        PartyCards byPartyName = partyCardsRepo.findByPartyName(partyName);
-        return byPartyName.getVoter();
+    public List<PartyCards> getAllParties(){
+        return partyCardsRepo.findAll();
     }
 }

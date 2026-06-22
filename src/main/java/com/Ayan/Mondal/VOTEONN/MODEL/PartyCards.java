@@ -1,9 +1,6 @@
 package com.Ayan.Mondal.VOTEONN.MODEL;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-
-import java.util.List;
 
 @Entity
 public class PartyCards {
@@ -21,10 +18,7 @@ public class PartyCards {
         private String mission;
         private String vision;
 
-        @OneToMany(mappedBy = "partyName")
-        @JsonManagedReference
-        private List<SaveVote> voter;
-
+        private Long voteCount = 0L;
 
        public PartyCards(){
 
@@ -94,11 +88,11 @@ public class PartyCards {
         this.vision = vision;
     }
 
-    public List<SaveVote> getVoter() {
-        return voter;
+    public Long getVoteCount() {
+        return voteCount;
     }
 
-    public void setVoter(List<SaveVote> voter) {
-        this.voter = voter;
+    public void setVoteCount(Long voteCount) {
+        this.voteCount = voteCount;
     }
 }

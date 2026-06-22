@@ -23,4 +23,11 @@ public class PartyCardsController {
             return ResponseEntity.status(HttpStatus.CREATED).body(partyByPartyName);
 
         }
+
+        @GetMapping("/admin/results")
+        public ResponseEntity<?> getElectionResults() {
+            // Returns the list of all parties including their voteCount tallies.
+            // This endpoint is secured by ROLE_ADMIN in SecurityConfig.
+            return ResponseEntity.ok(PartyCardsService.getAllParties());
+        }
 }
