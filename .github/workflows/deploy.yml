@@ -47,9 +47,9 @@ jobs:
 
             # 5. Launch the application with your production environment properties
             nohup java -jar \
-              -Dspring.datasource.url="jdbc:postgresql://db.jqgrcwisqahgvmdonzao.supabase.co:5432/postgres" \
-              -Dspring.datasource.username="postgres" \
-              -Dspring.datasource.password="Ayan@457953" \
-              target/VOTEONN-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            -Dspring.datasource.url="jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:6543/postgres" \
+            -Dspring.datasource.username="postgres.jqgrcwisqahgvmdonzao" \
+            -Dspring.datasource.password="Ayan@457953" \
+             target/VOTEONN-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
             
             echo "Spring Boot application deployment initiated successfully."
