@@ -17,6 +17,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +54,7 @@ public class UserController {
 
     // ── Login (email + password + Custom Alphanumeric CAPTCHA Validation) ─────
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginDTO dto) {
+    public ResponseEntity<?> loginUser(@RequestBody LoginDTO dto, HttpServletResponse response) {
 
         // Validating the internal security layer challenge
         if (!captchaService.verifyCaptcha(dto.getCaptchaSessionId(), dto.getCaptchaAnswer())) {
@@ -69,7 +73,15 @@ public class UserController {
             org.springframework.security.core.userdetails.UserDetails userDetails =
                     (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
 
-            String token = jwtService.generateToken(userDetails);
+            String accessToken = jwtService.generateAccessToken(userDetails);
+            String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+            Cookie cookie = new Cookie("refreshToken", refreshToken);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true);
+            cookie.setPath("/api/auth");
+            cookie.setMaxAge(2 * 24 * 60 * 60);
+            response.addCookie(cookie);
 
             // Extract the role (strip "ROLE_" prefix added by UserDetailsServiceImpl)
             String role = userDetails.getAuthorities().stream()
@@ -77,7 +89,7 @@ public class UserController {
                     .map(a -> a.getAuthority().replace("ROLE_", ""))
                     .orElse("USER");
 
-            return ResponseEntity.ok(Map.of("token", token, "role", role));
+            return ResponseEntity.ok(Map.of("token", accessToken, "role", role));
 
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -89,12 +101,32 @@ public class UserController {
     }
 
     @PostMapping("/auth/google")
-    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body, HttpServletResponse response) {
         String credential = body.get("credential");
 
         try {
-            Map<String, String> result = googleAuthService.authenticateWithGoogle(credential);
-            return ResponseEntity.ok(result);
+            org.springframework.security.core.userdetails.UserDetails userDetails = googleAuthService.authenticateWithGoogle(credential);
+            
+            String accessToken = jwtService.generateAccessToken(userDetails);
+            String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+            Cookie cookie = new Cookie("refreshToken", refreshToken);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true);
+            cookie.setPath("/api/auth");
+            cookie.setMaxAge(2 * 24 * 60 * 60);
+            response.addCookie(cookie);
+            
+            String role = userDetails.getAuthorities().stream()
+                    .findFirst()
+                    .map(a -> a.getAuthority().replace("ROLE_", ""))
+                    .orElse("USER");
+
+            return ResponseEntity.ok(Map.of(
+                    "token", accessToken,
+                    "role", role,
+                    "email", userDetails.getUsername()
+            ));
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Google verification failed: " + e.getMessage()));
@@ -102,6 +134,59 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("message", "Internal auth system handling processing mistake: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                }
+            }
+        }
+
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "No refresh token provided"));
+        }
+
+        try {
+            String email = jwtService.extractUsername(refreshToken);
+            // Verify user exists and get UserDetails
+            org.springframework.security.core.userdetails.UserDetails userDetails = 
+                    ((com.Ayan.Mondal.VOTEONN.CONFIG.UserDetailsServiceImpl) userService).loadUserByUsername(email);
+
+            if (jwtService.isRefreshTokenValid(refreshToken, userDetails)) {
+                String newAccessToken = jwtService.generateAccessToken(userDetails);
+                String newRefreshToken = jwtService.generateRefreshToken(userDetails);
+                
+                Cookie cookie = new Cookie("refreshToken", newRefreshToken);
+                cookie.setHttpOnly(true);
+                cookie.setSecure(true);
+                cookie.setPath("/api/auth");
+                cookie.setMaxAge(2 * 24 * 60 * 60);
+                response.addCookie(cookie);
+
+                return ResponseEntity.ok(Map.of("token", newAccessToken));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid refresh token"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Token validation failed"));
+        }
+    }
+
+    @PostMapping("/auth/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/api/auth");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
     @GetMapping("/all/user")

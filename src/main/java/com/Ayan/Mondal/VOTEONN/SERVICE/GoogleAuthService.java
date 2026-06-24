@@ -26,7 +26,7 @@ public class GoogleAuthService {
 
     private static final String CLIENT_ID = "1024481193894-rb7hqih2vc62nvpsurrq9c56fok1tter.apps.googleusercontent.com";
 
-    public Map<String, String> authenticateWithGoogle(String idTokenString) throws Exception {
+    public UserDetails authenticateWithGoogle(String idTokenString) throws Exception {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
                 .setAudience(Collections.singletonList(CLIENT_ID))
                 .build();
@@ -68,12 +68,6 @@ public class GoogleAuthService {
                 .authorities(userEntity.getRole())
                 .build();
 
-        String appToken = jwtService.generateToken(userDetails);
-
-        return Map.of(
-                "token", appToken,
-                "name", userEntity.getName(),
-                "email", userEntity.getEmail()
-        );
+        return userDetails;
     }
 }

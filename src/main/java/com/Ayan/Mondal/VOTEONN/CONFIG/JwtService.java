@@ -22,8 +22,9 @@ public class JwtService {
     private String SECRET_KEY;
 
 
-    // 2. Token expiration time (e.g., 24 hours)
-    private static final long JWT_TOKEN_VALIDITY = 1000 * 60 * 60 * 24;
+    // 2. Token expiration times
+    private static final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 5; // 5 minutes
+    private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24 * 2L; // 2 days
 
     // 3. Extracts username (email in your case) from token
     public String extractUsername(String token) {
@@ -36,22 +37,30 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    // 5. Generates a token for a user
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+    // 5. Generates an access token for a user
+    public String generateAccessToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails, ACCESS_TOKEN_VALIDITY, "access");
     }
 
-    // 6. Generates a token with extra claims
-    public String generateToken(
+    // Generates a refresh token for a user
+    public String generateRefreshToken(UserDetails userDetails) {
+        return generateToken(new HashMap<>(), userDetails, REFRESH_TOKEN_VALIDITY, "refresh");
+    }
+
+    // 6. Generates a token with extra claims and specific validity
+    private String generateToken(
             Map<String, Object> extraClaims,
-            UserDetails userDetails
+            UserDetails userDetails,
+            long validity,
+            String tokenType
     ) {
+        extraClaims.put("type", tokenType);
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
+                .setExpiration(new Date(System.currentTimeMillis() + validity))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -59,7 +68,15 @@ public class JwtService {
     // 7. Validates the token
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        String type = extractClaim(token, claims -> claims.get("type", String.class));
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token) && "access".equals(type);
+    }
+    
+    // Validates a refresh token
+    public boolean isRefreshTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        String type = extractClaim(token, claims -> claims.get("type", String.class));
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token) && "refresh".equals(type);
     }
 
     // 8. Checks if the token is expired
