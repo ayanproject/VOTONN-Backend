@@ -1,6 +1,7 @@
 package com.Ayan.Mondal.VOTEONN.CONTROLLER;
 
 import com.Ayan.Mondal.VOTEONN.CONFIG.JwtService;
+import com.Ayan.Mondal.VOTEONN.CONFIG.UserDetailsServiceImpl;
 import com.Ayan.Mondal.VOTEONN.DTO.LoginDTO;
 import com.Ayan.Mondal.VOTEONN.DTO.UserDTO;
 import com.Ayan.Mondal.VOTEONN.MODEL.UserEntity;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 public class UserController {
 
     @Autowired private UserService userService;
+    @Autowired private UserDetailsServiceImpl userDetailsService;
     @Autowired private AuthenticationManager authenticationManager;
     @Autowired private JwtService jwtService;
     @Autowired private CaptchaService captchaService;
@@ -156,7 +158,7 @@ public class UserController {
             String email = jwtService.extractUsername(refreshToken);
             // Verify user exists and get UserDetails
             org.springframework.security.core.userdetails.UserDetails userDetails = 
-                    ((com.Ayan.Mondal.VOTEONN.CONFIG.UserDetailsServiceImpl) userService).loadUserByUsername(email);
+                    userDetailsService.loadUserByUsername(email);
 
             if (jwtService.isRefreshTokenValid(refreshToken, userDetails)) {
                 String newAccessToken = jwtService.generateAccessToken(userDetails);
