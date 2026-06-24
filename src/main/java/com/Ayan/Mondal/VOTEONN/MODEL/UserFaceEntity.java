@@ -16,8 +16,7 @@ public class UserFaceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Lob
-    @Column(name = "face_image")
+    @Column(name = "face_image", columnDefinition = "bytea")
     private byte[] faceImage;
 
     @Column(nullable = false, unique = true)
