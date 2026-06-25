@@ -24,7 +24,7 @@ public class GoogleAuthService {
     @Autowired private UserRepository userRepository;
     @Autowired private JwtService jwtService;
 
-    private static final String CLIENT_ID = "1024481193894-rb7hqih2vc62nvpsurrq9c56fok1tter.apps.googleusercontent.com";
+    private static final String CLIENT_ID = "930858823292-6nr1enve464pdt8jjbh3ekqoerrq42f5.apps.googleusercontent.com";
 
     public UserDetails authenticateWithGoogle(String idTokenString) throws Exception {
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
