@@ -56,6 +56,7 @@ public class SecurityConfig {
         }
 
         public static final String[] PUBLIC_API = {
+                // Paths with /api prefix (for local testing)
                 "/api/register",
                 "/api/login",
                 "/api/auth/google",
@@ -64,20 +65,37 @@ public class SecurityConfig {
                 "/api/captcha",
                 "/api/voters/register",
                 "/api/voters/register-with-face",
-                "/error",
                 "/api/forgot-password**",
                 "/api/forgot-password/**",
                 "/api/party/**",
                 "/api/party**",
+
+                // Paths WITHOUT /api prefix (forwarded by Netlify proxy)
+                "/register",
+                "/login",
+                "/auth/google",
+                "/auth/refresh",
+                "/auth/logout",
+                "/captcha",
+                "/voters/register",
+                "/voters/register-with-face",
+                "/forgot-password**",
+                "/forgot-password/**",
+                "/party/**",
+                "/party**",
+
+                // General assets
+                "/error",
                 "/api/correction/submit",
                 "/api/deletion/submit",
+                "/correction/submit",
+                "/deletion/submit",
                 "/uploads/**",
                 "/*.html",
                 "/*.js",
                 "/*.css",
                 "/partySelection/**",
         };
-
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
