@@ -17,10 +17,10 @@ public class ebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(frontendURL, 
-                                "http://127.0.0.1:5500", "http://localhost:5500",
-                                "http://127.0.0.1:5503", "http://localhost:5503",
-                                "https://votonn.netlify.app")
+                .allowedOriginPatterns(frontendURL,
+                                "http://127.0.0.1:*", "http://localhost:*",
+                                "https://votonn.netlify.app",
+                                "https://*.netlify.app")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 .allowedHeaders("*")
                 .allowCredentials(true);
