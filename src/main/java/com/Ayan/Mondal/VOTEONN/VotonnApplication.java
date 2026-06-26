@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class VotonnApplication {
 
 	public static void main(String[] args) {
+		// Required for Java AWT (CAPTCHA image generation) on headless Linux servers
+		System.setProperty("java.awt.headless", "true");
 		SpringApplication.run(VotonnApplication.class, args);
 	}
 }

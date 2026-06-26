@@ -51,7 +51,12 @@ public class UserController {
     // ── NEW: Dynamic Custom CAPTCHA Endpoint ─────────────────────────────────
     @GetMapping("/captcha")
     public ResponseEntity<?> getCaptcha() {
-        return ResponseEntity.ok(captchaService.generateCaptcha());
+        try {
+            return ResponseEntity.ok(captchaService.generateCaptcha());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to generate CAPTCHA: " + e.getMessage()));
+        }
     }
 
     // ── Login (email + password + Custom Alphanumeric CAPTCHA Validation) ─────
@@ -81,7 +86,7 @@ public class UserController {
             Cookie cookie = new Cookie("refreshToken", refreshToken);
             cookie.setHttpOnly(true);
             cookie.setSecure(true);
-            cookie.setPath("/api/auth");
+            cookie.setPath("/");
             cookie.setMaxAge(2 * 24 * 60 * 60);
             response.addCookie(cookie);
 
@@ -115,7 +120,7 @@ public class UserController {
             Cookie cookie = new Cookie("refreshToken", refreshToken);
             cookie.setHttpOnly(true);
             cookie.setSecure(true);
-            cookie.setPath("/api/auth");
+            cookie.setPath("/");
             cookie.setMaxAge(2 * 24 * 60 * 60);
             response.addCookie(cookie);
             
@@ -167,7 +172,7 @@ public class UserController {
                 Cookie cookie = new Cookie("refreshToken", newRefreshToken);
                 cookie.setHttpOnly(true);
                 cookie.setSecure(true);
-                cookie.setPath("/api/auth");
+                cookie.setPath("/");
                 cookie.setMaxAge(2 * 24 * 60 * 60);
                 response.addCookie(cookie);
 
@@ -185,7 +190,7 @@ public class UserController {
         Cookie cookie = new Cookie("refreshToken", null);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
-        cookie.setPath("/api/auth");
+        cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
