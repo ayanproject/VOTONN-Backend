@@ -19,7 +19,10 @@ public class PartyCardsService {
     }
 
     public PartyCards getPartyByPartyName(String partyName) {
-        return partyCardsRepo.findByPartyName(partyName);
+        if (partyName == null) {
+            return null;
+        }
+        return partyCardsRepo.findByPartyNameIgnoreCase(partyName.trim());
     }
 
     public PartyCards addNewParty(PartyDTO party){

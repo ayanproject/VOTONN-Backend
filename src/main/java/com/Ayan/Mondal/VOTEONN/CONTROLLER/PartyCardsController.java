@@ -20,8 +20,10 @@ public class PartyCardsController {
         @GetMapping("/party")
         public ResponseEntity<?> getPartyByPartyName(@RequestParam String partyName) {
             PartyCards partyByPartyName = PartyCardsService.getPartyByPartyName(partyName);
-            return ResponseEntity.status(HttpStatus.CREATED).body(partyByPartyName);
-
+            if (partyByPartyName == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Party not found: " + partyName);
+            }
+            return ResponseEntity.ok(partyByPartyName);
         }
 
         @GetMapping("/admin/results")
