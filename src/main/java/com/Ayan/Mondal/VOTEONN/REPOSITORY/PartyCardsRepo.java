@@ -10,4 +10,5 @@ import java.util.List;
 public interface PartyCardsRepo extends JpaRepository<PartyCards,Long> {
 
     PartyCards findByPartyName(String partyName);
+    PartyCards findByPartyNameIgnoreCase(String partyName);
 }

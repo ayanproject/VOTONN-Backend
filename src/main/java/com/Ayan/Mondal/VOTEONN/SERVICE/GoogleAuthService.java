@@ -24,11 +24,16 @@ public class GoogleAuthService {
     @Autowired private UserRepository userRepository;
     @Autowired private JwtService jwtService;
 
-    private static final String CLIENT_ID = "930858823292-6nr1enve464pdt8jjbh3ekqoerrq42f5.apps.googleusercontent.com";
+    @Value("${google.client-id:930858823292-6nr1enve464pdt8jjbh3ekqoerrq42f5.apps.googleusercontent.com}")
+    private String clientId;
 
     public UserDetails authenticateWithGoogle(String idTokenString) throws Exception {
+        String finalClientId = (clientId == null || clientId.trim().isEmpty()) 
+            ? "930858823292-6nr1enve464pdt8jjbh3ekqoerrq42f5.apps.googleusercontent.com" 
+            : clientId.trim();
+
         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                .setAudience(Collections.singletonList(CLIENT_ID))
+                .setAudience(Collections.singletonList(finalClientId))
                 .build();
 
         GoogleIdToken idToken = verifier.verify(idTokenString);
@@ -41,7 +46,7 @@ public class GoogleAuthService {
         String email = payload.getEmail();
         String name = (String) payload.get("name");
 
-        Optional<UserEntity> userOpt = userRepository.findByEmail(email);
+        Optional<UserEntity> userOpt = userRepository.findByEmailIgnoreCase(email.trim());
         UserEntity userEntity;
 
         if (userOpt.isPresent()) {
@@ -65,7 +70,7 @@ public class GoogleAuthService {
 
         UserDetails userDetails = User.withUsername(userEntity.getEmail())
                 .password("")
-                .authorities(userEntity.getRole())
+                .authorities("ROLE_" + userEntity.getRole())
                 .build();
 
         return userDetails;

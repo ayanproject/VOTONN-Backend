@@ -126,15 +126,17 @@ public class FaceService {
     }
 
     public String submitVote(VoteRequest request) {
-        PartyCards byPartyName = cardsRepo.findByPartyName(request.getPartyName());
+        if (request.getPartyName() == null || request.getEmail() == null) {
+            throw new RuntimeException("Party name and Email are required.");
+        }
+
+        PartyCards byPartyName = cardsRepo.findByPartyNameIgnoreCase(request.getPartyName().trim());
         if (byPartyName == null) {
             throw new RuntimeException("Invalid party name: " + request.getPartyName());
         }
 
-        // =========================================================
-        // ✅ FIX 1: Find the voter by their EMAIL, not their Voter ID
-        // =========================================================
-        Optional<UserFaceEntity> byVoterEmail = userFaceRepository.findByEmail(request.getEmail());
+        // Find the voter case-insensitively by email
+        Optional<UserFaceEntity> byVoterEmail = userFaceRepository.findByEmailIgnoreCase(request.getEmail().trim());
 
         if (byVoterEmail.isEmpty()) {
             throw new RuntimeException("Voter not found for email: " + request.getEmail());
@@ -151,13 +153,10 @@ public class FaceService {
         // Increment the party's vote count
         byPartyName.setVoteCount(byPartyName.getVoteCount() + 1);
 
-        // =========================================================
-        // ✅ FIX 2: Save the voter using the CORRECT repository
-        // =========================================================
         userFaceRepository.save(voter); 
         cardsRepo.save(byPartyName);
 
-        emailService.sendVotingConfirmation(request.getEmail());
+        emailService.sendVotingConfirmation(voter.getEmail());
         return "Vote is given successfully";
     }
 }

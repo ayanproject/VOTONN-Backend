@@ -37,8 +37,11 @@ public class VoterAuthController {
 
     @PostMapping("/submit-vote")
     public ResponseEntity<?> submitVote(@RequestBody VoteRequest request) {
-
-        String s = voterService.submitVote(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(s);
+        try {
+            String s = voterService.submitVote(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(s);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }

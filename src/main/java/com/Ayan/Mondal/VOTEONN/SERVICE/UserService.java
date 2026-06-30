@@ -24,7 +24,7 @@ public class UserService {
     // All subsequent public registrations are always USER.
     @Transactional
     public String registerAsUser(UserDTO user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmailIgnoreCase(user.getEmail().trim()).isPresent()) {
             throw new IllegalArgumentException("Email already exists: " + user.getEmail());
         }
 
@@ -53,7 +53,7 @@ public class UserService {
     /** Promote an existing registered user to ADMIN role */
     @Transactional
     public String promoteToAdmin(String email) {
-        UserEntity user = userRepository.findByEmail(email)
+        UserEntity user = userRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new IllegalArgumentException("No user found with email: " + email));
 
         if ("ADMIN".equals(user.getRole())) {
@@ -68,7 +68,7 @@ public class UserService {
     /** Demote an existing admin back to USER role */
     @Transactional
     public String demoteToUser(String email) {
-        UserEntity user = userRepository.findByEmail(email)
+        UserEntity user = userRepository.findByEmailIgnoreCase(email.trim())
                 .orElseThrow(() -> new IllegalArgumentException("No user found with email: " + email));
 
         if ("USER".equals(user.getRole())) {
@@ -89,7 +89,7 @@ public class UserService {
     /** Create a brand-new user directly as ADMIN (admin-only action) */
     @Transactional
     public String createAdminUser(UserDTO user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmailIgnoreCase(user.getEmail().trim()).isPresent()) {
             throw new IllegalArgumentException("Email already exists: " + user.getEmail());
         }
 
