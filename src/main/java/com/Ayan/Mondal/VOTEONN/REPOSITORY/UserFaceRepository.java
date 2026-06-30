@@ -13,4 +13,6 @@ public interface UserFaceRepository extends JpaRepository<UserFaceEntity, Long> 
 
     // ✅ This one is GOOD (matches "email" field)
     Optional<UserFaceEntity> findByEmail(String email);
+
+    Optional<UserFaceEntity> findByEmailIgnoreCase(String email);
 }

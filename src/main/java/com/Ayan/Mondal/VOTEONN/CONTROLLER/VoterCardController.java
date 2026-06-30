@@ -63,8 +63,11 @@ public class VoterCardController {
     @PostMapping("/verify")
     public ResponseEntity<?> sendOtp(@RequestBody OtpRequest request) {
         try {
-            // ✅ 1. Check if the user/email is valid first
-            Optional<UserFaceEntity> userOptional = userFaceRepository.findByEmail(request.getEmail());
+            if (request.getEmail() == null) {
+                return ResponseEntity.badRequest().body("Email is required.");
+            }
+            // ✅ 1. Check if the user/email is valid first (case-insensitively)
+            Optional<UserFaceEntity> userOptional = userFaceRepository.findByEmailIgnoreCase(request.getEmail().trim());
 
             if (userOptional.isEmpty()) {
                 // 🛑 User does not exist. Do not send OTP.
@@ -87,11 +90,20 @@ public class VoterCardController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody OtpRequest request) {
-        // This logic is simple: check the email and OTP
-        boolean isOtpValid = otpService.verifyOtp(request.getEmail(), request.getOtp());
+        if (request.getEmail() == null || request.getOtp() == null) {
+            return ResponseEntity.badRequest().body("Email and OTP are required.");
+        }
+        // ✅ Resolve authoritative email case-insensitively to ensure match with stored OTP key
+        Optional<UserFaceEntity> userOptional = userFaceRepository.findByEmailIgnoreCase(request.getEmail().trim());
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.badRequest().body("No user registered with this email.");
+        }
+        String authoritativeEmail = userOptional.get().getEmail();
+
+        boolean isOtpValid = otpService.verifyOtp(authoritativeEmail, request.getOtp().trim());
 
         if (isOtpValid) {
-            emailService.sendAlertEmail(request.getEmail(),request.getVoterId(),request.getName());
+            emailService.sendAlertEmail(authoritativeEmail, request.getVoterId(), request.getName());
             return ResponseEntity.ok("OTP verified successfully.");
 
         } else {
@@ -109,6 +121,42 @@ public class VoterCardController {
             return ResponseEntity.ok(updatedFace);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("❌ Error updating face: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify-credentials")
+    public ResponseEntity<?> verifyCredentials(@RequestBody java.util.Map<String, String> request) {
+        try {
+            String voterId = request.get("voterId");
+            String secretPin = request.get("secretPin");
+
+            if (voterId == null || voterId.trim().isEmpty() || secretPin == null || secretPin.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(java.util.Map.of("message", "Voter ID and Secret PIN are required."));
+            }
+
+            org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = 
+                new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+
+            java.util.Optional<UserFaceEntity> matchedVoter = userFaceRepository.findAll().stream()
+                    .filter(v -> encoder.matches(voterId.trim(), v.getEncryptedVoterId()))
+                    .findFirst();
+
+            if (matchedVoter.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Map.of("message", "Invalid Voter ID."));
+            }
+
+            UserFaceEntity voter = matchedVoter.get();
+            if (!encoder.matches(secretPin.trim(), voter.getEncryptedSecretPin())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(java.util.Map.of("message", "Invalid Secret PIN."));
+            }
+
+            if (voter.isHasVoted()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", "You have already voted!"));
+            }
+
+            return ResponseEntity.ok(java.util.Map.of("message", "Credentials verified successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("message", "Server error: " + e.getMessage()));
         }
     }
 
