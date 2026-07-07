@@ -61,7 +61,7 @@ public class UserController {
 
     // ── Login (email + password + Custom Alphanumeric CAPTCHA Validation) ─────
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginDTO dto, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> loginUser(@RequestBody LoginDTO dto, HttpServletResponse response) {
 
         // Validating the internal security layer challenge
         if (!captchaService.verifyCaptcha(dto.getCaptchaSessionId(), dto.getCaptchaAnswer())) {
@@ -83,7 +83,12 @@ public class UserController {
             String accessToken = jwtService.generateAccessToken(userDetails);
             String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-            setRefreshTokenCookie(request, response, refreshToken, 2 * 24 * 60 * 60);
+            Cookie cookie = new Cookie("refreshToken", refreshToken);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(2 * 24 * 60 * 60);
+            response.addCookie(cookie);
 
             // Extract the role (strip "ROLE_" prefix added by UserDetailsServiceImpl)
             String role = userDetails.getAuthorities().stream()
@@ -103,7 +108,7 @@ public class UserController {
     }
 
     @PostMapping("/auth/google")
-    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body, HttpServletResponse response) {
         String credential = body.get("credential");
 
         try {
@@ -112,7 +117,12 @@ public class UserController {
             String accessToken = jwtService.generateAccessToken(userDetails);
             String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-            setRefreshTokenCookie(request, response, refreshToken, 2 * 24 * 60 * 60);
+            Cookie cookie = new Cookie("refreshToken", refreshToken);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(2 * 24 * 60 * 60);
+            response.addCookie(cookie);
             
             String role = userDetails.getAuthorities().stream()
                     .findFirst()
@@ -159,7 +169,12 @@ public class UserController {
                 String newAccessToken = jwtService.generateAccessToken(userDetails);
                 String newRefreshToken = jwtService.generateRefreshToken(userDetails);
                 
-                setRefreshTokenCookie(request, response, newRefreshToken, 2 * 24 * 60 * 60);
+                Cookie cookie = new Cookie("refreshToken", newRefreshToken);
+                cookie.setHttpOnly(true);
+                cookie.setSecure(true);
+                cookie.setPath("/");
+                cookie.setMaxAge(2 * 24 * 60 * 60);
+                response.addCookie(cookie);
 
                 return ResponseEntity.ok(Map.of("token", newAccessToken));
             } else {
@@ -171,8 +186,13 @@ public class UserController {
     }
 
     @PostMapping("/auth/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        setRefreshTokenCookie(request, response, null, 0);
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("refreshToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
@@ -239,14 +259,5 @@ public class UserController {
                 "phone", a.getPhone() != null ? a.getPhone() : "N/A"
         )).collect(Collectors.toList());
         return ResponseEntity.ok(safeList);
-    }
-
-    private void setRefreshTokenCookie(HttpServletRequest request, HttpServletResponse response, String token, int maxAge) {
-        Cookie cookie = new Cookie("refreshToken", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(request.isSecure());
-        cookie.setPath("/");
-        cookie.setMaxAge(maxAge);
-        response.addCookie(cookie);
     }
 }
