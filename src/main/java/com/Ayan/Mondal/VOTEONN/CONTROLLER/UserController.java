@@ -10,7 +10,9 @@ import com.Ayan.Mondal.VOTEONN.SERVICE.CaptchaService;
 import com.Ayan.Mondal.VOTEONN.SERVICE.GoogleAuthService;
 import com.Ayan.Mondal.VOTEONN.SERVICE.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -83,12 +85,15 @@ public class UserController {
             String accessToken = jwtService.generateAccessToken(userDetails);
             String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-            Cookie cookie = new Cookie("refreshToken", refreshToken);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(2 * 24 * 60 * 60);
-            response.addCookie(cookie);
+            // SameSite=None;Secure is required for cross-origin cookie (Netlify → Render)
+            ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(2 * 24 * 60 * 60)
+                    .sameSite("None")
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
             // Extract the role (strip "ROLE_" prefix added by UserDetailsServiceImpl)
             String role = userDetails.getAuthorities().stream()
@@ -117,12 +122,15 @@ public class UserController {
             String accessToken = jwtService.generateAccessToken(userDetails);
             String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-            Cookie cookie = new Cookie("refreshToken", refreshToken);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(2 * 24 * 60 * 60);
-            response.addCookie(cookie);
+            // SameSite=None;Secure is required for cross-origin cookie (Netlify → Render)
+            ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(2 * 24 * 60 * 60)
+                    .sameSite("None")
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             
             String role = userDetails.getAuthorities().stream()
                     .findFirst()
@@ -168,13 +176,16 @@ public class UserController {
             if (jwtService.isRefreshTokenValid(refreshToken, userDetails)) {
                 String newAccessToken = jwtService.generateAccessToken(userDetails);
                 String newRefreshToken = jwtService.generateRefreshToken(userDetails);
-                
-                Cookie cookie = new Cookie("refreshToken", newRefreshToken);
-                cookie.setHttpOnly(true);
-                cookie.setSecure(true);
-                cookie.setPath("/");
-                cookie.setMaxAge(2 * 24 * 60 * 60);
-                response.addCookie(cookie);
+
+                // SameSite=None;Secure is required for cross-origin cookie (Netlify → Render)
+                ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                        .httpOnly(true)
+                        .secure(true)
+                        .path("/")
+                        .maxAge(2 * 24 * 60 * 60)
+                        .sameSite("None")
+                        .build();
+                response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
                 return ResponseEntity.ok(Map.of("token", newAccessToken));
             } else {
@@ -187,12 +198,15 @@ public class UserController {
 
     @PostMapping("/auth/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("refreshToken", null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        // SameSite=None;Secure required to properly clear the cross-origin cookie
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("None")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
 
